@@ -1,5 +1,6 @@
 
 #include "./apps/watchfaces/watchface.h"
+#include "easing.h"
 // #define GIF_BG
 
 #ifdef MATRIX
@@ -54,13 +55,26 @@ void OswAppWatchface::drawStepHistory(OswUI* ui, uint8_t x, uint8_t y, uint8_t w
 void OswAppWatchface::drawWatch() {
   OswHal* hal = OswHal::getInstance();
 
-  hal->gfx()->drawMinuteTicks(120, 120, 116, 112, ui->getForegroundDimmedColor());
-  hal->gfx()->drawHourTicks(120, 120, 117, 107, ui->getForegroundColor());
+  static long startup = 0;
+  if (startup == 0) {
+    startup = millis();
+  }
+
+  float startAnim = (millis() - startup) / 500.0;
+  
+  if (startAnim > 1) {
+    startAnim = 1;
+  }
+
+  float startAnimTickEase = getEasingFunction(EaseInOutQuart)(startAnim);
+
+  hal->gfx()->drawMinuteTicks(120, 120, 116, 112, startAnimTickEase, ui->getForegroundDimmedColor());
+  hal->gfx()->drawHourTicks(120, 120, 117, 107, startAnimTickEase, ui->getForegroundColor());
 
 #if OSW_PLATFORM_ENVIRONMENT_ACCELEROMETER == 1
   uint32_t steps = hal->environment->getStepsToday();
   uint32_t stepsTarget = OswConfigAllKeys::stepsPerDay.get();
-  hal->gfx()->drawArc(120, 120, 0, 360.0 * (float)(steps % stepsTarget) / (float)stepsTarget, 90, 93, 6,
+  hal->gfx()->drawArc(120, 120, 0, 360.0 * (float)(steps % stepsTarget) / (float)stepsTarget * startAnimTickEase, 90, 93, 6,
                       steps > stepsTarget ? ui->getSuccessColor() : ui->getInfoColor(), true);
 #endif
 
@@ -86,21 +100,30 @@ void OswAppWatchface::drawWatch() {
   uint32_t hour = 0;
   hal->getLocalTime(&hour, &minute, &second);
 
+  float startAnimHandEase = getEasingFunction(EaseOutExpo)(startAnim);
+
+  hal->gfx()->setTextMiddleAligned();
+  hal->gfx()->setTextSize(2);
+  hal->gfx()->setTextCursor(120 - hal->gfx()->getTextOfsetColumns(2.5), 210 - hal->gfx()->getTextOfsetRows(1) / 2);
+
+  hal->gfx()->printDecimal(hour, 2);
+  hal->gfx()->print(":");
+  hal->gfx()->printDecimal(minute, 2);
+
   // hours
-  hal->gfx()->drawThickTick(120, 120, 0, 16, 360.0 / 12.0 * (1.0 * hour + minute / 60.0), 1, ui->getForegroundColor());
-  hal->gfx()->drawThickTick(120, 120, 16, 60, 360.0 / 12.0 * (1.0 * hour + minute / 60.0), 4, ui->getForegroundColor());
+  hal->gfx()->drawThickTick(120, 120, 0 , 16 * startAnimHandEase, 360.0 / 12.0 * (1.0 * hour + minute / 60.0), 1 * startAnimHandEase, ui->getForegroundColor());
+  hal->gfx()->drawThickTick(120, 120, 16, 60 * startAnimHandEase, 360.0 / 12.0 * (1.0 * hour + minute / 60.0), 4 * startAnimHandEase, ui->getForegroundColor());
 
   // minutes
-  hal->gfx()->drawThickTick(120, 120, 0, 16, 360.0 / 60.0 * (1.0 * minute + second / 60.0), 1,
+  hal->gfx()->drawThickTick(120, 120, 0, 16 * startAnimHandEase, 360.0 / 60.0 * (1.0 * minute + second / 60.0), 1 * startAnimHandEase,
                             ui->getForegroundColor());
-  hal->gfx()->drawThickTick(120, 120, 16, 105, 360.0 / 60.0 * (1.0 * minute + second / 60.0), 4,
+  hal->gfx()->drawThickTick(120, 120, 16, 105 * startAnimHandEase, 360.0 / 60.0 * (1.0 * minute + second / 60.0), 4 * startAnimHandEase,
                             ui->getForegroundColor());
 
 #ifndef GIF_BG
   // seconds
   hal->gfx()->fillCircle(120, 120, 3, ui->getDangerColor());
-  hal->gfx()->drawThickTick(120, 120, 0, 16, 360.0 / 60.0 * second, 1, ui->getDangerColor());
-  hal->gfx()->drawThickTick(120, 120, 0, 110, 360.0 / 60.0 * second, 1, ui->getDangerColor());
+  hal->gfx()->drawThickTick(120, 120, 0, 110 * startAnimHandEase, 360.0 / 60.0 * second, 1 * startAnimHandEase, ui->getDangerColor());
 #endif
 }
 

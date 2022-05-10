@@ -41,7 +41,7 @@ void analogWatchDisplay() {
 
   hal->getLocalTime(&hour, &minute, &second);
   hal->gfx()->drawCircle((int)(DISP_W * 0.5) - 55, 100, 50, rgb565(255, 255, 255));
-  hal->gfx()->drawHourTicks((int)(DISP_W*0.5)-55, 100, 45, 40, rgb565(255, 255, 255));
+  hal->gfx()->drawHourTicks((int)(DISP_W*0.5)-55, 100, 45, 40, 1, rgb565(255, 255, 255));
 
   // hour
   hal->gfx()->drawLine((int)(DISP_W*0.5)-55, 100, rpx((int)(DISP_W*0.5)-55, (int)(33 * 0.5), hour * 30  + (int)( minute* 0.1 ) * 6), rpy(100, (int)(33 * 0.5), hour * 30 + (int)( minute* 0.1 ) * 6 ), rgb565(255, 255, 255)); 
