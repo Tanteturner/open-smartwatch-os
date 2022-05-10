@@ -1,7 +1,7 @@
 #pragma once
 
 #include <list>
-
+#include <cstdint>
 #include <devices/OswDevice.h>
 
 class OswAccelerationProvider : public OswDevice {

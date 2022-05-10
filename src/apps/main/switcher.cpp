@@ -1,5 +1,6 @@
 
 #include "./apps/main/switcher.h"
+#include "easing.h"
 
 #define SLEEP_TIMOUT 1000
 
@@ -92,55 +93,37 @@ void OswAppSwitcher::loop() {
 
   // draw app switcher
   if (hal->btnIsDown(_btn)) {
-    uint8_t btnX = 0;
-    uint8_t btnY = 0;
-    int16_t progressOffset = 0;
-    // draw button switcher close to button
-    switch (_btn) {
-      case BUTTON_2:
-        btnX = 214;
-        btnY = 190;
-        progressOffset = 135;
-        break;
-      case BUTTON_3:
-        btnX = 214;
-        btnY = 50;
-        progressOffset = 135;
-        break;
-      case BUTTON_1:
-      default:
-        btnX = 26;
-        btnY = 190;
-        progressOffset = -45;
-        break;
-    }
+    uint8_t progX = 121;
+    uint8_t progY = 200;
 
-    switch (_type) {
-      case LONG_PRESS:
+    boolean displaySleep = _enableSleep && hal->btnIsDownSince(_btn) > DEFAULTLAUNCHER_LONG_PRESS + SLEEP_TIMOUT;
+
+    if(!displaySleep){
+      if(_type == LONG_PRESS){
         // long press has the hollow square that fills (draws around short press)
         if (hal->btnIsDownSince(_btn) > DEFAULTLAUNCHER_LONG_PRESS) {
           // draw a large frame
-          hal->gfx()->fillCircle(btnX, btnY, 20, OswUI::getInstance()->getSuccessColor());
+          hal->gfx()->fillCircle(progX, progY, 14, OswUI::getInstance()->getInfoColor());
         } else {
           uint8_t progress = 0;
           if (hal->btnIsDownSince(_btn) > DEFAULTLAUNCHER_LONG_PRESS / 2) {
             progress = (hal->btnIsDownSince(_btn) - (DEFAULTLAUNCHER_LONG_PRESS / 2)) /
-                       ((DEFAULTLAUNCHER_LONG_PRESS / 2) / 255.0);
+                      ((DEFAULTLAUNCHER_LONG_PRESS / 2) / 255.0);
           }
-          hal->gfx()->drawArc(btnX, btnY, progressOffset, progressOffset + (progress / 255.0) * 180, progress / 4, 20,
-                              3, OswUI::getInstance()->getForegroundColor());
+          if(progress != 0){
+            double progressPercent = progress / 255.0;
+            double progressPercentEase = getEasingFunction(EaseOutQuart)(progressPercent);
+            double beginningPercent = progressPercent / 0.5;
+            if(beginningPercent > 1) {beginningPercent = 1;}
+            beginningPercent = getEasingFunction(EaseOutBack)(beginningPercent);
+            hal->gfx()->drawArc(progX, progY, 180, progressPercentEase * 360 + 180, progress * 4,beginningPercent * 12, 2, OswUI::getInstance()->getInfoColor());
+          }
         }
-        break;
-      case SHORT_PRESS:
-      default:
-        hal->gfx()->fillCircle(btnX, btnY, 10, OswUI::getInstance()->getSuccessColor());
+      }
     }
-
-    if (_enableSleep && hal->btnIsDownSince(_btn) > DEFAULTLAUNCHER_LONG_PRESS + SLEEP_TIMOUT) {
-      // draw half moon
-      hal->gfx()->fillCircle(btnX, btnY, 9, OswUI::getInstance()->getForegroundDimmedColor());
-      hal->gfx()->fillCircle(btnX, btnY, 8, OswUI::getInstance()->getBackgroundColor());
-      hal->gfx()->fillCircle(btnX + 3, btnY, 6, OswUI::getInstance()->getForegroundDimmedColor());
+    else {
+      hal->gfx()->drawArc(progX, progY, 45, 315, 12, 15, 3, OswUI::getInstance()->getDangerColor());
+      hal->gfx()->drawThickLine(progX, progY - 6, progX, progY - 18, 3, OswUI::getInstance()->getDangerColor());
     }
   }
 }
